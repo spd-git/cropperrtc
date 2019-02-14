@@ -1,0 +1,281 @@
+<html>
+<head>
+  <title> Vymo Web RTC </title>
+  <link href="/stylesheets/app.css" rel="stylesheet" type="text/css">
+  <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+</head>
+<body onmouseup="redraw(event);">
+
+<div id="videos">
+  <div id="subscriber"></div>
+  <div id="publisher"></div>
+</div>
+
+<div class="compact marquee">
+  <div id="info" style="visibility: hidden;">
+  </div>
+  <div id="div_start" style="visibility: hidden;">
+    <button id="start_button" onclick="startButton(event)" style="display: inline-block;"><img alt="Start" id="start_img" src="/images/mic.gif"></button>
+  </div>
+  <div id="results">
+    <span class="final" id="final_span"></span> <span class="interim" id="interim_span"></span>
+  </div>
+  <div id="results_other">
+    <span class="final" id="final_span_other"></span> <span class="interim" id="interim_span_other"></span>
+  </div>
+  <div class="compact marquee" id="div_language" style="visibility: hidden;">
+    <select id="select_language" onchange="updateCountry()">
+      <option value="0">English</option>
+      <option value="1">ગુજરાતી</option>
+      <option value="2">मराठी</option>
+      <option value="3">हिन्दी</option>
+    </select>
+    <select id="select_dialect" style="visibility: hidden;">
+      &nbsp;&nbsp;
+      <option value="en-IN"></option>
+    </select>
+  </div>
+</div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="prediction_chart" class="insightsLeft" style="top:10px;"></div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="sentiment_chart" class="insightsLeft" style="top:155px;"></div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="barchart_material" class="insightsLeft" style="top:300px;"></div>
+<div id="all_fine"><p>"Vymo k according all is Well"</p></div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event); "id="suggested_words" class="insightsLeft" style="top:700px;"></div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="personality" class="insights" style="top:10px;"></div>
+<div id="personality_detail_container">
+  <div onmousedown="redraw(event);" onmouseup="redraw(event);" id="quality1" class="insights" style="top:121px;"></div>
+  <div onmousedown="redraw(event);" onmouseup="redraw(event);" id="quality2" class="insights" style="top:232px;"></div>
+  <div onmousedown="redraw(event);" onmouseup="redraw(event);" id="quality3" class="insights" style="top:343px;"></div>
+  <div onmousedown="redraw(event);" onmouseup="redraw(event);" id="quality4" class="insights" style="top:454px;"></div>
+  <div onmousedown="redraw(event);" onmouseup="redraw(event);" id="quality5" class="insights" style="top:565px;"></div>
+</div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="needs" class="insights" style="top:676px;"  ></div>
+<div onmousedown="redraw(event);" onmouseup="redraw(event);" id="values" class="insights" style="top:787px;" ></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="js/app.js"></script>
+<script type="text/javascript" src="js/voicetranslation.js"></script>
+<script type="text/javascript" src="js/lineChart.js"></script>
+<script type="text/javascript" src="js/barChart.js"></script>
+<script type="text/javascript" src="js/bubbleChart.js"></script>
+<script type="text/javascript">
+
+  var graphData;
+  function redraw(){
+    drawChart(String(myTimeLine) + 's', graphData);
+  }
+  var GetDummyDataFromText = function () {
+    var postReqData = $('#final_span').text() + $('#final_span_other').text()
+    var postReqDataString;
+    if(postReqData){
+      postReqDataString = JSON.stringify({"text":postReqData})
+    }
+    /*$.ajax({
+      url: "https://ritiksparser.herokuapp.com/getdummuystats",
+      type: "POST"})*/
+
+    $.ajax({
+      "url": "http://ritiksparser.herokuapp.com/predict",
+      type: "POST",
+      async: false,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "processData": false,
+      "data": postReqDataString
+    })
+            .done(function (data) {
+              console.log("Sentiment score is " + JSON.stringify(data.predict));
+              // $("#interim_result").text(data.documents[0].score);
+              graphData = data;
+              drawChart(String(myTimeLine) + 's', data)
+              myTimeLine += 5;
+            })
+            .fail(function () {
+              console.log("error");
+            });
+  }
+
+  var lastNegativeValue = 1;
+  var displaySuggestions = false;
+  var interval = 1000 * 10; // where X is your every X seconds
+  setInterval(GetDummyDataFromText, interval);
+
+  function drawChart(timeline, result) {
+    if (!timeline) {
+      return
+    }
+    var currentPrediction = []
+    var currentSentiment = []
+    var KNN, Logistic
+    var positive, negative, neutral
+    var words_suggestionStats = []
+    if (result) {
+      var predict = result.predict
+      if (predict) {
+        var o = predict.find(x => x.label === 'KNN')
+        if (o) {
+          KNN = parseFloat(o.value)
+        }
+        o = predict.find(x => x.label === 'Logistic Regression')
+        if (o) {
+          Logistic = parseFloat(o.value)
+        }
+      }
+      var sentiment = result.sentiment
+      if (sentiment) {
+        positive = parseFloat(sentiment.positive)
+        neutral = parseFloat(sentiment.neutral)
+        negative = parseFloat(sentiment.negative)
+        if(lastNegativeValue<negative || true){
+          displaySuggestions = true
+          var suggested_words = result.suggestion
+          //suggested_words = [{"label":"ahh","score":30}]
+          if(suggested_words){
+            suggested_words = suggested_words.slice(0,10)
+
+            words_suggestionStats = [['Word','Score']]
+            words_suggestionStats = words_suggestionStats.concat(suggested_words.map(x=>[x.label,x.score]))
+          }
+        }
+        lastNegativeValue = negative
+      }
+      var wordCount = result.word_freq
+      var wordStat = []
+      if (wordCount) {
+        wordStat = wordCount.map(x => [x.label, x.count])
+      }
+      var ibm = result.ibm
+      var personality_stat = []
+      var quality1_stat = {}
+      var quality2_stat = {}
+      var quality3_stat = {}
+      var quality4_stat = {}
+      var quality5_stat = {}
+      var needs_stat = [],values_stat=[]
+      if (ibm) {
+        var personality = ibm.personality
+        if(personality) {
+          personality_stat = personality.map(x=>[x.name, parseFloat(x.percentile)])
+          if(personality[0]) {
+            var quality1 = personality[0].children
+            if (quality1) {
+              quality1_stat.data = quality1.map(x=>[x.name, parseFloat(x.percentile)])
+              quality1_stat.name = personality[0].name
+            }
+          }
+          if(personality[1]) {
+            var quality2 = personality[1].children
+            if (quality2) {
+              quality2_stat.data = quality2.map(x=>[x.name, parseFloat(x.percentile)])
+              quality2_stat.name = personality[1].name
+            }
+          }
+          if(personality[2]) {
+            var quality3 = personality[2].children
+            if (quality3) {
+              quality3_stat.data = quality3.map(x=>[x.name, parseFloat(x.percentile)])
+              quality3_stat.name = personality[2].name
+            }
+          }
+          if(personality[3]) {
+            var quality4 = personality[4].children
+            if (quality4) {
+              quality4_stat.data = quality4.map(x=>[x.name, parseFloat(x.percentile)])
+              quality4_stat.name = personality[3].name
+            }
+          }
+          if(personality[4]) {
+            var quality5 = personality[4].children
+            if (quality5) {
+              quality5_stat.data = quality5.map(x=>[x.name, parseFloat(x.percentile)])
+              quality5_stat.name = personality[4].name
+            }
+          }
+        }
+        var needs = ibm.needs
+        if(needs){
+          needs_stat = needs.map(x=>[x.name, parseFloat(x.percentile)])
+        }
+        var values = ibm.values
+        if(values){
+          values_stat = values.map(x=>[x.name, parseFloat(x.percentile)])
+        }
+      }
+    }
+    currentPrediction = [timeline, KNN, Logistic]
+    currentSentiment = [timeline, positive, neutral, negative]
+    if (currentPrediction != null) {
+      myPredictionChartData.push(currentPrediction);
+      drawLineChart(myPredictionChartData, 'PREDICTIONS', 'Metrics', 0, 1, 'prediction_chart')
+    }
+    if (currentSentiment) {
+      mySentimentChartData.push(currentSentiment)
+      drawLineChart(mySentimentChartData, 'SENTIMENTS', 'Metrics', 0, 1, 'sentiment_chart')
+    }
+    if (wordStat) {
+      drawBarChart(wordStats.concat(wordStat), 'Word Stats', 'word frequency', 'horizontal', 'barchart_material')
+    }
+    if(personality_stat){
+      drawBarChart(personalityChart.concat(personality_stat), 'Personality Traits',
+              'personality traits', '', 'personality')
+      //five qualities
+      var quality_chart = []
+      if(quality1_stat!=null){
+        quality_chart.push([quality1_stat.name,'PERCENTILES'])
+        drawBarChart(quality_chart.concat(quality1_stat.data), quality1_stat.name+' Traits',
+                quality1_stat.name+' Traits', '', 'quality1')
+      }
+      quality_chart = []
+      if(quality2_stat!=null){
+        quality_chart.push([quality2_stat.name,'PERCENTILES'])
+        drawBarChart(quality_chart.concat(quality2_stat.data), quality2_stat.name+' Traits',
+                quality2_stat.name+' Traits', '', 'quality2')
+      }
+      quality_chart = []
+      if(quality3_stat!=null){
+        quality_chart.push([quality2_stat.name,'PERCENTILES'])
+        drawBarChart(quality_chart.concat(quality2_stat.data), quality3_stat.name+' Traits',
+                quality3_stat.name+' Traits', '', 'quality3')
+      }
+      quality_chart = []
+      if(quality4_stat!=null){
+        quality_chart.push([quality4_stat.name,'PERCENTILES'])
+        drawBarChart(quality_chart.concat(quality4_stat.data), quality4_stat.name+' Traits',
+                quality4_stat.name+' Traits', '', 'quality4')
+      }
+      quality_chart = []
+      if(quality5_stat!=null){
+        quality_chart.push([quality5_stat.name,'PERCENTILES'])
+        drawBarChart(quality_chart.concat(quality5_stat.data), quality5_stat.name+' Traits',
+                quality5_stat.name+' Traits', '', 'quality5')
+      }
+    }
+    if(needs_stat){
+      drawBarChart(personalityChart.concat(needs_stat), 'Needs Analysis',
+              'Needs Analysis', '', 'needs')
+    }
+    if(values_stat){
+      drawBarChart(personalityChart.concat(values_stat), 'Values Analysis',
+              'Values Analysis', '', 'values')
+    }
+
+    if(displaySuggestions){
+      $("div#suggested_words").show();
+      drawBarChart(words_suggestionStats,'These words can lead to Positive Outcomes','These words can lead to Positivity','Score','suggested_words')
+      $("div#all_fine").hide();
+    }else{
+      $("div#suggested_words").hide();
+      $("div#all_fine").show();
+    }
+  }
+
+  var myPredictionChartData = [['Time', 'KNN', 'LOGISTIC']];
+  var mySentimentChartData = [['Time', 'POSITIVE', 'NEUTRAL', 'NEGATIVE']];
+  var wordStats = [['WORDS', 'FREQUENCY']];
+  var personalityChart = [['Metrics','Percentiles']]
+  var myTimeLine=0;
+  </script>
+</body>
+</html>

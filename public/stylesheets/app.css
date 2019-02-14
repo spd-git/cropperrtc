@@ -1,0 +1,165 @@
+body, html {
+    background-color: gray;
+    height: 100%;
+}
+#videos {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+#subscriber {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+#publisher {
+    position: absolute;
+    width: 290px;
+    height: 164px;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+    border: 1px solid gray;
+    border-radius: 3px;
+    transition: opacity 1s;
+}
+
+
+
+#info {
+    font-size: 20px;
+}
+#div_start {
+    float: right;
+}
+#headline {
+    text-decoration: none
+}
+#results {
+    position: absolute;
+    width: 290px;
+    height: 142px;
+    bottom: 14px;
+    left: 348px;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 200;
+}
+#results_other {
+    position: absolute;
+    width: 290px;
+    height: 142px;
+    bottom: 14px;
+    left: 670px;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 200;
+}
+
+
+#start_button {
+    border: 0;
+    background-color:transparent;
+    padding: 0;
+}
+.insights {
+    position: absolute;
+    width: 240px;
+    height: 90px;
+    right: 5px;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 200;
+}
+.insights:active {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 25% !important;;
+    left: 25%;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 300;
+}
+.insightsLeft {
+    position: absolute;
+    width: 290px;
+    height: 120px;
+    left: 5px;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 200;
+}
+.insightsLeft:active {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    top: 25% !important;
+    left: 25%;
+    font-size: 14px;
+    background-color: white;
+    font-weight: bold;
+    border: 1px solid gray;
+    padding: 10px;
+    text-align: left;
+    border-radius: 3px;
+    z-index: 300;
+}
+.interim {
+    color: gray;
+}
+.final {
+    color: black;
+    padding-right: 3px;
+}
+.button {
+    display: none;
+}
+.marquee {
+    margin: 20px auto;
+}
+
+#buttons {
+    margin: 10px 0;
+    position: relative;
+    top: -50px;
+}
+
+#copy {
+    margin-top: 20px;
+}
+
+#copy > div {
+    display: none;
+    margin: 0 70px;
+}
